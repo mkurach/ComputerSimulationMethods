@@ -120,9 +120,9 @@ void readInput(string fileName, struct Parameters &parameters) {
 
 void initialConditions(struct State &state, struct Parameters &params){
     
-    double b0[3] = {params.a,0,0};
-    double b1[3] = {params.a/2,params.a/2*sqrt(3),0};
-    double b2[3] = {params.a/2,params.a/6*sqrt(3),params.a*sqrt(2)/sqrt(3)};
+    double b0[3] = {params.a, 0, 0};
+    double b1[3] = {params.a/2,  params.a/2*sqrt(3),0};
+    double b2[3] = {params.a/2, params.a/6*sqrt(3),params.a*sqrt(2)/sqrt(3)};
 
     //POLOZENIA
 
@@ -147,7 +147,9 @@ void initialConditions(struct State &state, struct Parameters &params){
     state.H = 0;
     state.T = 0;
     double ri, rij, R12, R6;
-    double pedCaly = 0;
+    double pedCalyx = 0;
+    double pedCalyy = 0;
+    double pedCalyz = 0;
 
     for(int i = 0; i < N; i++) { //kazdy atom
 
@@ -160,8 +162,10 @@ void initialConditions(struct State &state, struct Parameters &params){
                             znak*sqrt(2*params.m*(-kBoltz)/2*params.T_0*log((double)(rand()%1000+1)/1000)),
                             znak*sqrt(2*params.m*(-kBoltz)/2*params.T_0*log((double)(rand()%1000+1)/1000))});
         
-        pedCaly += sqrt(state.p[i][0]*state.p[i][0] + state.p[i][1]*state.p[i][1] + state.p[i][2]*state.p[i][2]);
-
+        //pedCaly += sqrt(state.p[i][0]*state.p[i][0] + state.p[i][1]*state.p[i][1] + state.p[i][2]*state.p[i][2]);
+        pedCalyx += state.p[i][0];
+        pedCalyy += state.p[i][1];
+        pedCalyz += state.p[i][2];
         //POTENCJALY I SILY OD SCIANEK
         
         ri = sqrt(state.r[i][0]*state.r[i][0] + state.r[i][1]*state.r[i][1] + state.r[i][2]*state.r[i][2]);
@@ -199,24 +203,37 @@ void initialConditions(struct State &state, struct Parameters &params){
         
     }
 
-    pedCaly = pedCaly/N;
+    pedCalyx = (double)pedCalyx/N;
+    pedCalyy = (double)pedCalyy/N;
+    pedCalyz = (double)pedCalyz/N;
+
+    //cout<<pedCalyx<<endl;
+    //cout<<pedCalyy<<endl;
+    //cout<<pedCalyz<<endl;
 
     for(int i = 0; i < N; i++) {
-        for(int j = 0; j < 3; j++)
-            state.p[i][j] = state.p[i][j]-pedCaly;
+        //for(int j = 0; j < 3; j++)
+           // state.p[i][j] = state.p[i][j]-pedCaly;
+        state.p[i][0] -= pedCalyx;
+        state.p[i][1] -= pedCalyy;
+        state.p[i][2] -= pedCalyz;
     }
+
+
 
     /*ofstream file;
     file.open("pedy.txt");
     for(auto vec : state.p) {
         file<<vec[0]<<"\t"<<vec[1]<<"\t"<<vec[2]<<"\n";
-        cout<<vec[0]<<"\t"<<vec[1]<<"\t"<<vec[2]<<"\n";
+        //cout<<vec[0]<<"\t"<<vec[1]<<"\t"<<vec[2]<<"\n";
     }
     file.close();*/
 
 
 
 }
+
+
 
 void simulation(struct State &state, struct Parameters &params, string fileNameMain,string fileNameXYZ) {
     ofstream fileOut, fileOutXYZ;
@@ -238,19 +255,18 @@ void simulation(struct State &state, struct Parameters &params, string fileNameM
         state.T = 0;
         state.H = 0;
 
-        for(int i = 0; i < N; i++) { //dla kazdego atomu
-
-            //AKTUALIZUJE POLOZENIA I PEDY, ZERUJE SILY
+        
+        for(int i = 0; i < N; i++) { //AKTUALIZUJE POLOZENIA I PEDY, ZERUJE SILY
             for(int j = 0; j < 3; j++) { 
-                state.p[i][j] = state.p[i][j] + state.F[i][j]/2.0*params.tau;
-                state.r[i][j] = state.r[i][j] + state.p[i][j]*params.tau/params.m;
+                state.p[i][j] += state.F[i][j]/2.0*params.tau;
+                state.r[i][j] += state.p[i][j]*params.tau/params.m;
                 state.F[i][j] = 0; 
             }
-
-
+        }
     
-            //POTENCJALY I SILY OD SCIANEK
         
+        for(int i = 0; i < N; i++) {
+            //POTENCJALY I SILY OD SCIANEK
             ri = sqrt(state.r[i][0]*state.r[i][0] + state.r[i][1]*state.r[i][1] + state.r[i][2]*state.r[i][2]);
             
             if(ri >= params.L) {
@@ -262,44 +278,42 @@ void simulation(struct State &state, struct Parameters &params, string fileNameM
             //CISNIENIE
             state.P += sqrt(state.F[i][0]*state.F[i][0] + state.F[i][1]*state.F[i][1] + state.F[i][2]*state.F[i][2])/(4.0*3.14*params.L*params.L);
 
-            //POTENCJALY I SILY OD INNYCH 
+            
+            for(int j = 0; j < i; j ++) { //POTENCJALY I SILY OD INNYCH 
 
-            if(i != 0) {
-                for(int j = 0; j < i; j ++){
+                rij = sqrt((state.r[i][0]-state.r[j][0])*(state.r[i][0]-state.r[j][0]) + 
+                        (state.r[i][1]-state.r[j][1])*(state.r[i][1]-state.r[j][1]) +
+                        (state.r[i][2]-state.r[j][2])*(state.r[i][2]-state.r[j][2]));
 
-                    rij = sqrt((state.r[i][0]-state.r[j][0])*(state.r[i][0]-state.r[j][0]) + 
-                            (state.r[i][1]-state.r[j][1])*(state.r[i][1]-state.r[j][1]) +
-                            (state.r[i][2]-state.r[j][2])*(state.r[i][2]-state.r[j][2]));
+                R6 = params.R/rij * params.R/rij * params.R/rij * params.R/rij * params.R/rij * params.R/rij;
+                R12 = R6 * R6;
+                state.V += params.e*(R12-2*R6);
 
-                    R6 = params.R/rij * params.R/rij * params.R/rij * params.R/rij * params.R/rij * params.R/rij;
-                    R12 = R6 * R6;
-                    state.V += params.e*(R12-2*R6);
-
-                    for(int k = 0; k < 3; k++) {
-                        state.F[i][k] += 12.0*params.e*(R12-R6)/rij/rij*(state.r[i][k]-state.r[j][k]);
-                        state.F[j][k] += (-12.0)*params.e*(R12-R6)/rij/rij*(state.r[i][k]-state.r[j][k]);
-                    }
+                for(int k = 0; k < 3; k++) {
+                    state.F[i][k] += 12.0*params.e*(R12-R6)/rij/rij*(state.r[i][k]-state.r[j][k]);
+                    state.F[j][k] += (-12.0)*params.e*(R12-R6)/rij/rij*(state.r[i][k]-state.r[j][k]);
                 }
             }
+            
+        }
 
-            //AKTUALIZUJE PEDY
+        for(int i = 0; i < N; i++) {
+            //AKTUALIZUJE PEDY 
             for(int j = 0; j < 3; j++)
-                state.p[i][j] = state.p[i][j]+state.F[i][j]*params.tau/2;
-
+                state.p[i][j] += state.F[i][j]*params.tau/2;
 
             //TEMPERATURA I ENERGIA
             pi = sqrt(state.p[i][0]*state.p[i][0] + state.p[i][1]*state.p[i][1] + state.p[i][2]*state.p[i][2]);
             state.T += 2.0/3.0/N/kBoltz/params.m/2.0*pi*pi;
             state.H += pi*pi/2.0/params.m;
-
-        }//kazdy atom
+        
+        }
 
         state.H += state.V;
 
 
         if(klatka%params.S_out == 0) {
-            fileOut<<klatka*params.tau<<"\t"<<state.H<<"\t"<<state.V<<"\t"<<state.T<<"\t"<<state.P<<"\n";
-            cout<<"Energia "<<state.H<<endl;
+            fileOut<<klatka*params.tau<<"\t\t"<<state.H<<"\t"<<state.V<<"\t"<<state.T<<"\t"<<state.P<<"\n";
         }
         if(klatka%params.S_xyz == 0) {
             fileOutXYZ<<N<<"\n\n";

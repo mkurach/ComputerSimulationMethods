@@ -12,7 +12,7 @@ void macro() {
     file.open("pedy.txt");
 
     Float_t px,py,pz;
-    TH1D* histx = new TH1D("x","x",100,-7,7);
+    TH1D* histx = new TH1D("x","x",150,-7,7);
     TH1D* histy = new TH1D("y","y",50,-50,50);
     TH1D* histz = new TH1D("z","z",50,-50,50);
 

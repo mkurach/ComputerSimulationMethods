@@ -3,8 +3,9 @@
 #include <math.h>
 #include <fstream>
 #include <iostream>
+#include <algorithm>
 
-Simulation::Simulation() {
+Simulation::Simulation(double mnoznik_) {
     N = 100;
     xmin = 0;
     xmax = 1;
@@ -13,7 +14,9 @@ Simulation::Simulation() {
     S = 500000;
     n = 1;
     kappa = 1;
-    omega = 3*M_PI*M_PI/2;
+    mnoznik = mnoznik_;
+    omega0 = 3*M_PI*M_PI/2;
+    omega = mnoznik*omega0;
     tau = 0;
 
 }
@@ -81,6 +84,7 @@ void Simulation::simulation(char *name) {
             en *= deltax;
 
             file<<t<<"\t"<<norm<<"\t"<<en<<"\t"<<sr<<"\n";
+            enVec.push_back(en);
         }
 
 
@@ -89,12 +93,14 @@ void Simulation::simulation(char *name) {
 
     }
 
+
+    std::cout<<"max en dla omega "<<mnoznik<<"    "<<*std::max_element(enVec.begin(),enVec.end())<<std::endl;
     file.close();
 
 }
 
 int main(int argc, char *argv[]) {
-    Simulation *sim = new Simulation();
+    Simulation *sim = new Simulation(atof(argv[2]));
     sim->initializeX();
     sim->initializePsi();
     sim->simulation(argv[1]);

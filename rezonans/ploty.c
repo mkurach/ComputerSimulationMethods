@@ -9,7 +9,7 @@
 void ploty() {
 
     ifstream file;
-    file.open("omega0.txt");
+    file.open("omega1.txt");
 
     Float_t t,norm,en,sr;
     TGraph *grNorm = new TGraph();
@@ -58,7 +58,7 @@ void ploty() {
     can->cd(3);
     grSr->Draw("AP");
 
-    can->SaveAs("omega0.jpg");
+    can->SaveAs("omega1.jpg");
 
     file.close();
 
